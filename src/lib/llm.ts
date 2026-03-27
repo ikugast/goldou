@@ -8,13 +8,25 @@ export interface LLMConfig {
   maxTokens?: number;
 }
 
+function getModelForProvider(provider: string): string {
+  switch (provider) {
+    case 'doubao':
+      return process.env.DOUBAO_MODEL || 'doubao-pro-32k';
+    case 'deepseek':
+      return process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+    default:
+      return process.env.OPENAI_MODEL || 'gpt-4';
+  }
+}
+
 export async function callLLM(
   userPrompt: string,
   config?: Partial<LLMConfig>
 ): Promise<string> {
+  const provider = (config?.provider || process.env.DEFAULT_LLM_PROVIDER || 'doubao') as any;
   const fullConfig: LLMConfig = {
-    provider: (config?.provider || process.env.DEFAULT_LLM_PROVIDER || 'doubao') as any,
-    model: config?.model || getDefaultModel(),
+    provider: provider,
+    model: config?.model || getModelForProvider(provider),
     systemPrompt: config?.systemPrompt || '你是一个专业的金融分析师助手。',
     temperature: config?.temperature ?? 0.7,
     maxTokens: config?.maxTokens ?? 2000,
@@ -47,18 +59,6 @@ export async function callLLM(
   } catch (error) {
     console.error('LLM调用失败:', error);
     throw new Error(`LLM服务暂时不可用: ${error instanceof Error ? error.message : '未知错误'}`);
-  }
-}
-
-function getDefaultModel(): string {
-  const provider = process.env.DEFAULT_LLM_PROVIDER || 'doubao';
-  switch (provider) {
-    case 'doubao':
-      return process.env.DOUBAO_MODEL || 'doubao-pro-32k';
-    case 'deepseek':
-      return process.env.DEEPSEEK_MODEL || 'deepseek-chat';
-    default:
-      return process.env.OPENAI_MODEL || 'gpt-4';
   }
 }
 
