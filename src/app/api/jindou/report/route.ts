@@ -131,9 +131,20 @@ export async function POST(request: Request): Promise<NextResponse<ReportRespons
       }, { status: 400 });
     }
 
+    console.log('='.repeat(50));
     console.log('正在生成研报，查询:', query);
+    console.log('环境变量检查:');
+    console.log('- DOUBAO_API_KEY:', process.env.DOUBAO_API_KEY ? '已配置' : '未配置');
+    console.log('- OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '已配置' : '未配置');
+    console.log('- DEEPSEEK_API_KEY:', process.env.DEEPSEEK_API_KEY ? '已配置' : '未配置');
+    console.log('- TAVILY_API_KEY:', process.env.TAVILY_API_KEY ? '已配置' : '未配置');
+    console.log('- WEB_SEARCH_API_KEY:', process.env.WEB_SEARCH_API_KEY ? '已配置' : '未配置');
+    console.log('- SERPAPI_KEY:', process.env.SERPAPI_KEY ? '已配置' : '未配置');
+    console.log('='.repeat(50));
 
     let uniqueResults: SearchResult[] = [];
+    let searchStatus = '未执行';
+    
     try {
       const searchQueries = [
         `${query} 股票分析 最新`,
@@ -142,11 +153,13 @@ export async function POST(request: Request): Promise<NextResponse<ReportRespons
         `${query} 行业分析`
       ];
 
+      console.log('开始搜索，查询:', searchQueries);
       const allSearchResults: SearchResult[] = [];
       for (const q of searchQueries) {
         try {
-          const result = await searchWeb(q, 2);
+          const result = await searchWeb(q, 3);
           allSearchResults.push(...result.results);
+          console.log(`搜索"${q}"完成，获取${result.results.length}条结果`);
         } catch (searchError) {
           console.warn('搜索查询失败:', q, searchError);
         }
@@ -155,19 +168,23 @@ export async function POST(request: Request): Promise<NextResponse<ReportRespons
       uniqueResults = Array.from(
         new Map(allSearchResults.map(item => [item.url, item])).values()
       );
-      console.log('搜索结果数量:', uniqueResults.length);
+      searchStatus = `成功获取${uniqueResults.length}条搜索结果`;
+      console.log('去重后搜索结果数量:', uniqueResults.length);
     } catch (searchError) {
-      console.warn('搜索API失败，跳过搜索:', searchError);
+      searchStatus = `搜索失败: ${searchError instanceof Error ? searchError.message : '未知错误'}`;
+      console.error('搜索API失败:', searchError);
     }
 
     let report: ReportData | null = null;
+    let llmStatus = '未执行';
     
     try {
+      console.log('开始调用LLM生成研报...');
       const context = uniqueResults.length > 0 
         ? uniqueResults.map(r => `标题: ${r.title}\n内容: ${r.content}\n链接: ${r.url}`).join('\n\n')
         : '暂无最新资讯，请基于一般情况生成研报。';
 
-      const systemPrompt = `你是一个专业的股票分析师。请为指定股票生成一份标准化的分析研报。
+      const systemPrompt = `你是一个专业的股票分析师。请基于提供的最新资讯，为指定股票生成一份标准化的分析研报。
 
 请输出以下JSON格式：
 {
@@ -194,22 +211,32 @@ export async function POST(request: Request): Promise<NextResponse<ReportRespons
 
 股票查询: ${query}
 
-以下是相关资讯：
+以下是最新的相关资讯：
 ${context}
 
-请为该股票生成一份标准化的分析研报。`;
+请基于以上信息，为该股票生成一份标准化的分析研报。如果资讯中没有具体的财务数据，请使用合理的估算值。`;
 
       report = await callLLMWithJSON<ReportData>(userPrompt, {
         systemPrompt,
         temperature: 0.4,
         maxTokens: 2000,
       });
+      llmStatus = 'LLM生成成功';
+      console.log('LLM研报生成成功:', report?.name);
     } catch (llmError) {
-      console.warn('LLM生成失败，使用mock数据:', llmError);
+      llmStatus = `LLM生成失败: ${llmError instanceof Error ? llmError.message : '未知错误'}`;
+      console.error('LLM生成失败:', llmError);
     }
 
+    let dataSource = '';
     if (!report) {
+      console.warn('使用Mock数据');
       report = getMockReport(query);
+      dataSource = 'Mock数据（API密钥未配置或调用失败）';
+      report.summary += `\n\n【数据来源】${dataSource}。搜索状态：${searchStatus}。LLM状态：${llmStatus}。`;
+    } else {
+      dataSource = 'AI生成';
+      report.summary += `\n\n【数据来源】${dataSource}。搜索状态：${searchStatus}。`;
     }
 
     return NextResponse.json({
@@ -226,6 +253,7 @@ ${context}
     console.error('金豆研报API错误:', error);
     const { query } = await request.json().catch(() => ({ query: '' }));
     const mockReport = getMockReport(query);
+    mockReport.summary += `\n\n【数据来源】Mock数据（严重错误）。错误：${error instanceof Error ? error.message : '未知错误'}`;
 
     return NextResponse.json({
       success: true,
