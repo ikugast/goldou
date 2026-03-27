@@ -312,31 +312,46 @@ function getMockReport(query: string): ReportData {
     };
   }
   
+  const symbolMatch = query.match(/^\d{6}$/);
+  const stockName = symbolMatch ? query : query;
+  const stockSymbol = symbolMatch ? query : '000000';
+  
+  return generateGenericStockReport(stockName, stockSymbol);
+}
+
+function generateGenericStockReport(name: string, symbol: string): ReportData {
+  const randomRating: 'buy' | 'hold' | 'sell' = Math.random() > 0.3 ? 'buy' : (Math.random() > 0.5 ? 'hold' : 'sell');
+  const currentPrice = Math.floor(Math.random() * 200) + 20;
+  const upside = randomRating === 'buy' ? Math.floor(Math.random() * 30) + 5 : 
+                  randomRating === 'sell' ? -Math.floor(Math.random() * 20) - 5 : 
+                  Math.floor(Math.random() * 10) - 5;
+  const targetPrice = currentPrice * (1 + upside / 100);
+
   return {
-    symbol: '600519',
-    name: '贵州茅台',
-    rating: 'buy',
-    targetPrice: 1880,
-    currentPrice: 1688,
-    upside: 11.37,
-    summary: '公司作为白酒行业龙头，品牌护城河深厚。2025年一季度业绩稳健增长，直销占比持续提升。维持买入评级。',
+    symbol: symbol,
+    name: name,
+    rating: randomRating,
+    targetPrice: Math.round(targetPrice * 100) / 100,
+    currentPrice: currentPrice,
+    upside: Math.round(upside * 100) / 100,
+    summary: `${name}作为市场关注的企业，近期受到投资者关注。公司在业务发展方面持续推进，建议投资者关注公司后续公告和行业动态。请注意，该股票不在AI交易股票池中，仅供分析参考。`,
     pros: [
-      '品牌价值行业第一，定价权极强',
-      '现金流优异，财务状况健康',
-      '直销渠道拓展顺利，盈利能力持续提升'
+      '市场关注度较高，交投活跃',
+      '行业发展趋势向好',
+      '公司治理结构完善'
     ],
     cons: [
-      '估值处于历史高位，安全边际不足',
-      '股价波动受外资影响较大',
-      '高端酒竞争加剧'
+      '不在AI交易股票池中，AI无法进行交易',
+      '需注意投资风险，做好尽职调查',
+      '市场波动可能影响股价表现'
     ],
     financials: {
-      revenue: 1425,
-      revenueGrowth: 18.5,
-      netProfit: 750,
-      profitGrowth: 22.3,
-      pe: 32.5,
-      pb: 15.8
+      revenue: Math.floor(Math.random() * 500) + 50,
+      revenueGrowth: Math.round((Math.random() * 30 - 5) * 100) / 100,
+      netProfit: Math.floor(Math.random() * 50) + 5,
+      profitGrowth: Math.round((Math.random() * 40 - 10) * 100) / 100,
+      pe: Math.floor(Math.random() * 50) + 15,
+      pb: Math.floor(Math.random() * 10) + 2
     },
     timestamp: new Date().toISOString(),
   };
