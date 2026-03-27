@@ -18,9 +18,11 @@ export default function JindouNews() {
   const [isLoading, setIsLoading] = useState(false);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchNews = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/jindou/news', {
         method: 'POST',
@@ -28,9 +30,12 @@ export default function JindouNews() {
       const data = await response.json();
       if (data.success && data.data) {
         setNews(data.data.news);
+      } else if (data.error) {
+        setError(data.error);
       }
     } catch (error) {
       console.error('获取金豆财讯数据失败:', error);
+      setError('网络错误，请稍后重试');
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +97,21 @@ export default function JindouNews() {
         </button>
       </div>
 
-      {isLoading && news.length === 0 && (
+      {error && (
+        <div className="text-center py-12">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={fetchNews}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
+            >
+              重新尝试
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isLoading && news.length === 0 && !error && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
           <p className="text-slate-400">正在联网搜索最新财经资讯...</p>

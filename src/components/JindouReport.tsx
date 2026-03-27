@@ -29,11 +29,13 @@ export default function JindouReport() {
   const [query, setQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<ReportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!query.trim()) return;
     
     setIsGenerating(true);
+    setError(null);
     
     try {
       const response = await fetch('/api/jindou/report', {
@@ -47,9 +49,12 @@ export default function JindouReport() {
       const data = await response.json();
       if (data.success && data.data) {
         setReport(data.data.report);
+      } else if (data.error) {
+        setError(data.error);
       }
     } catch (error) {
       console.error('生成研报失败:', error);
+      setError('网络错误，请稍后重试');
     } finally {
       setIsGenerating(false);
     }
@@ -100,6 +105,21 @@ export default function JindouReport() {
           {isGenerating ? '生成中...' : '生成研报'}
         </button>
       </div>
+
+      {error && (
+        <div className="text-center py-12">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !query.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+            >
+              重新尝试
+            </button>
+          </div>
+        </div>
+      )}
 
       {report && (
         <div className="bg-slate-900 rounded-lg p-6 border border-slate-700">

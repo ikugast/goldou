@@ -15,9 +15,11 @@ export default function JindouMarket() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [analyses, setAnalyses] = useState<MarketAnalysis[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMarketAnalysis = async () => {
     setIsGenerating(true);
+    setError(null);
     try {
       const response = await fetch('/api/jindou/market', {
         method: 'POST',
@@ -25,9 +27,12 @@ export default function JindouMarket() {
       const data = await response.json();
       if (data.success && data.data) {
         setAnalyses(data.data.analyses);
+      } else if (data.error) {
+        setError(data.error);
       }
     } catch (error) {
       console.error('获取金豆看盘数据失败:', error);
+      setError('网络错误，请稍后重试');
     } finally {
       setIsGenerating(false);
     }
@@ -80,7 +85,21 @@ export default function JindouMarket() {
         </button>
       </div>
 
-      {isGenerating && analyses.length === 0 && (
+      {error && (
+        <div className="text-center py-12">
+          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={fetchMarketAnalysis}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
+            >
+              重新尝试
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isGenerating && analyses.length === 0 && !error && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-slate-400">正在联网搜索并分析市场...</p>
