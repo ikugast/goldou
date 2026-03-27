@@ -2,13 +2,24 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createInitialModel } from '@/lib/data';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
 
 export async function POST() {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: '环境变量未配置' }, { status: 500 });
+  }
   try {
     const startDate = new Date().toISOString().split('T')[0];
     
@@ -70,6 +81,11 @@ export async function POST() {
 }
 
 export async function DELETE() {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: '环境变量未配置' }, { status: 500 });
+  }
+  
   try {
     await supabase.from('held_since').delete().neq('id', 0);
     await supabase.from('nav_history').delete().neq('id', 0);

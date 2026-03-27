@@ -3,15 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 import { generateRealAIDecision } from '@/lib/aiDecisionGatewayReal';
 import { validateOrder, executeOrder, updatePositions, recordNAV } from '@/lib/tradeEngine';
 import { fetchCNStockData, defaultSymbols } from '@/lib/marketData';
-import { Model, Stock } from '@/types';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: { autoRefreshToken: false, persistSession: false }
-});
+import { Model } from '@/types';
 
 export async function POST(request: NextRequest) {
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json({ error: '环境变量未配置' }, { status: 500 });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
   try {
     const { manual = false } = await request.json();
     
