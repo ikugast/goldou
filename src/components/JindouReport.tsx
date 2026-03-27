@@ -135,7 +135,7 @@ export default function JindouReport() {
               <div className="flex items-center gap-4 text-sm text-slate-400">
                 <span className="flex items-center gap-1">
                   <Clock size={14} />
-                  {new Date(report.timestamp).toLocaleDateString('zh-CN')}
+                  {report.timestamp ? new Date(report.timestamp).toLocaleDateString('zh-CN') : '--'}
                 </span>
               </div>
             </div>
