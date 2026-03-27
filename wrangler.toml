@@ -1,0 +1,10 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "goldou"
+compatibility_date = "2024-11-01"
+
+[build]
+command = "npm run build"
+
+[vars]
+# Add your environment variables here
+
