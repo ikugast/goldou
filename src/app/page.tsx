@@ -20,13 +20,16 @@ export default function Home() {
     setIsLoading(true);
     try {
       const response = await fetch('/api/models');
-      const data = await response.json();
-      if (data.success && data.data.models) {
-        setModels(data.data.models);
-        setLastUpdated(new Date());
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.models) {
+          setModels(data.data.models);
+          setLastUpdated(new Date());
+          return;
+        }
       }
     } catch (error) {
-      console.error('获取模型数据失败:', error);
+      console.log('使用本地mock数据（API不可用）:', error);
     } finally {
       setIsLoading(false);
     }

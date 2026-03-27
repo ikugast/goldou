@@ -92,9 +92,13 @@ export async function POST(request: Request): Promise<NextResponse<ReportRespons
       console.error('搜索API失败:', searchError);
     }
 
+    const cleanText = (text: string) => {
+      return text.replace(/[^\x00-\xFF]/g, '').replace(/\s+/g, ' ').trim();
+    };
+    
     console.log('开始调用LLM生成研报...');
     const context = uniqueResults.length > 0 
-      ? uniqueResults.map(r => `标题: ${r.title}\n内容: ${r.content}\n链接: ${r.url}`).join('\n\n')
+      ? uniqueResults.map(r => `标题: ${cleanText(r.title)}\n内容: ${cleanText(r.content)}\n链接: ${r.url}`).join('\n\n')
       : '暂无最新资讯，请基于一般情况生成研报。';
 
     const systemPrompt = `你是一个专业的股票分析师。请基于提供的最新资讯，为指定股票生成一份标准化的分析研报。

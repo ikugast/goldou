@@ -49,8 +49,12 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
       new Map(allSearchResults.map(item => [item.url, item])).values()
     );
 
+    const cleanText = (text: string) => {
+      return text.replace(/[^\x00-\xFF]/g, '').replace(/\s+/g, ' ').trim();
+    };
+    
     const context = uniqueResults.map(r => 
-      `标题: ${r.title}\n内容: ${r.content}\n链接: ${r.url}`
+      `标题: ${cleanText(r.title)}\n内容: ${cleanText(r.content)}\n链接: ${r.url}`
     ).join('\n\n');
 
     const systemPrompt = `你是一个专业的A股市场分析师。请基于提供的最新财经资讯，对上证指数、创业板指、科创50三个指数进行今日走势预判。
