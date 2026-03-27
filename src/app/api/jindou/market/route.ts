@@ -18,6 +18,14 @@ interface MarketResponse {
   error?: string;
 }
 
+const cleanText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/[^\x00-\xFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export async function POST(): Promise<NextResponse<MarketResponse>> {
   try {
     const hasLLMKey = process.env.DOUBAO_API_KEY || process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
@@ -29,16 +37,16 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
     }
 
     const searchQueries = [
-      'A股 大盘走势 最新',
-      '上证指数 今日分析',
-      '创业板指 走势预测',
-      '科创50 行情分析'
+      'A股 market trend',
+      'Shanghai Composite Index analysis',
+      'ChiNext Index forecast',
+      'STAR 50 Index analysis'
     ];
 
     const allSearchResults: SearchResult[] = [];
     for (const query of searchQueries) {
       try {
-        const result = await searchWeb(query, 3);
+        const result = await searchWeb(query, 2);
         allSearchResults.push(...result.results);
       } catch (searchError) {
         console.warn('搜索查询失败:', query, searchError);
@@ -48,47 +56,43 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
     const uniqueResults = Array.from(
       new Map(allSearchResults.map(item => [item.url, item])).values()
     );
-
-    const cleanText = (text: string) => {
-      return text.replace(/[^\x00-\xFF]/g, '').replace(/\s+/g, ' ').trim();
-    };
     
     const context = uniqueResults.map(r => 
-      `标题: ${cleanText(r.title)}\n内容: ${cleanText(r.content)}\n链接: ${r.url}`
+      `Title: ${cleanText(r.title)}\nContent: ${cleanText(r.content)}\nURL: ${r.url}`
     ).join('\n\n');
 
-    const systemPrompt = `你是一个专业的A股市场分析师。请基于提供的最新财经资讯，对上证指数、创业板指、科创50三个指数进行今日走势预判。
+    const systemPrompt = cleanText(`You are a professional A-share market analyst. Based on the latest financial news provided, please make today's market trend predictions for the Shanghai Composite Index, ChiNext Index, and STAR 50 Index.
 
-请输出以下JSON格式：
+Please output the following JSON format:
 {
   "analyses": [
     {
-      "index": "上证指数",
+      "index": "Shanghai Composite Index",
       "prediction": "bullish|bearish|neutral",
-      "confidence": 0-100的数字,
-      "reasoning": "详细的分析理由"
+      "confidence": number between 0-100,
+      "reasoning": "detailed analysis"
     },
     {
-      "index": "创业板指",
+      "index": "ChiNext Index",
       "prediction": "bullish|bearish|neutral",
-      "confidence": 0-100的数字,
-      "reasoning": "详细的分析理由"
+      "confidence": number between 0-100,
+      "reasoning": "detailed analysis"
     },
     {
-      "index": "科创50",
+      "index": "STAR 50 Index",
       "prediction": "bullish|bearish|neutral",
-      "confidence": 0-100的数字,
-      "reasoning": "详细的分析理由"
+      "confidence": number between 0-100,
+      "reasoning": "detailed analysis"
     }
   ]
-}`;
+}`);
 
-    const userPrompt = `当前时间: ${new Date().toLocaleDateString('zh-CN')}
+    const userPrompt = cleanText(`Current time: ${new Date().toISOString().split('T')[0]}
 
-以下是最新的市场资讯：
+Here is the latest market news:
 ${context}
 
-请基于以上信息，对上证指数、创业板指、科创50三个指数进行今日走势预判。`;
+Based on the above information, please make today's market trend predictions for the Shanghai Composite Index, ChiNext Index, and STAR 50 Index.`);
 
     const result = await callLLMWithJSON<{ analyses: MarketAnalysis[] }>(userPrompt, {
       provider: 'doubao',
