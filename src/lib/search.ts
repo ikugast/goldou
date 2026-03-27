@@ -10,7 +10,7 @@ export interface SearchResponse {
 }
 
 export async function searchWeb(query: string, numResults: number = 5): Promise<SearchResponse> {
-  const apiKey = process.env.TAVILY_API_KEY || process.env.SERPAPI_KEY;
+  const apiKey = process.env.TAVILY_API_KEY || process.env.SERPAPI_KEY || process.env.WEB_SEARCH_API_KEY;
   
   if (!apiKey) {
     console.warn('No search API key found, using mock data');
@@ -18,7 +18,7 @@ export async function searchWeb(query: string, numResults: number = 5): Promise<
   }
 
   try {
-    if (process.env.TAVILY_API_KEY) {
+    if (process.env.TAVILY_API_KEY || process.env.WEB_SEARCH_API_KEY) {
       return await searchWithTavily(query, numResults);
     } else if (process.env.SERPAPI_KEY) {
       return await searchWithSerpAPI(query, numResults);
@@ -32,13 +32,14 @@ export async function searchWeb(query: string, numResults: number = 5): Promise<
 }
 
 async function searchWithTavily(query: string, numResults: number): Promise<SearchResponse> {
+  const apiKey = process.env.TAVILY_API_KEY || process.env.WEB_SEARCH_API_KEY;
   const response = await fetch('https://api.tavily.com/search', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      api_key: process.env.TAVILY_API_KEY,
+      api_key: apiKey,
       query: query,
       search_depth: 'basic',
       max_results: numResults,
