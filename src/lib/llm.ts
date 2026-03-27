@@ -8,6 +8,14 @@ export interface LLMConfig {
   maxTokens?: number;
 }
 
+function cleanText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/[^\x00-\xFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function getModelForProvider(provider: string): string {
   switch (provider) {
     case 'doubao':
@@ -24,10 +32,13 @@ export async function callLLM(
   config?: Partial<LLMConfig>
 ): Promise<string> {
   const provider = (config?.provider || process.env.DEFAULT_LLM_PROVIDER || 'doubao') as any;
+  const cleanedSystemPrompt = cleanText(config?.systemPrompt || '你是一个专业的金融分析师助手。');
+  const cleanedUserPrompt = cleanText(userPrompt);
+  
   const fullConfig: LLMConfig = {
     provider: provider,
     model: config?.model || getModelForProvider(provider),
-    systemPrompt: config?.systemPrompt || '你是一个专业的金融分析师助手。',
+    systemPrompt: cleanedSystemPrompt,
     temperature: config?.temperature ?? 0.7,
     maxTokens: config?.maxTokens ?? 2000,
   };
@@ -47,7 +58,7 @@ export async function callLLM(
       model: fullConfig.model,
       messages: [
         { role: 'system', content: fullConfig.systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: cleanedUserPrompt }
       ],
       temperature: fullConfig.temperature,
       max_tokens: fullConfig.maxTokens,
