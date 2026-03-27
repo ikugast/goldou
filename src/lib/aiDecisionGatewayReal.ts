@@ -36,8 +36,8 @@ const MODEL_CONFIGS = {
 8. 价值投资理念：寻找被低估、有安全边际的股票`
   },
   momentum: {
-    provider: 'deepseek' as const,
-    model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    provider: 'doubao' as const,
+    model: process.env.DOUBAO_MODEL || 'doubao-pro-32k',
     systemPrompt: `你是一个专业的动量交易策略专家，专注于A股市场。你的任务是追踪市场趋势，追涨杀跌。
 
 要求：
@@ -85,8 +85,8 @@ const MODEL_CONFIGS = {
 6. 遵守T+1交易规则`
   },
   risk: {
-    provider: 'deepseek' as const,
-    model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    provider: 'doubao' as const,
+    model: process.env.DOUBAO_MODEL || 'doubao-pro-32k',
     systemPrompt: `你是一个风险控制优先的投资经理，专注于A股市场的稳健投资。
 
 要求：

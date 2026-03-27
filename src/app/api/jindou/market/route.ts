@@ -20,6 +20,14 @@ interface MarketResponse {
 
 export async function POST(): Promise<NextResponse<MarketResponse>> {
   try {
+    const hasLLMKey = process.env.DOUBAO_API_KEY || process.env.OPENAI_API_KEY || process.env.DEEPSEEK_API_KEY;
+    if (!hasLLMKey) {
+      return NextResponse.json({
+        success: false,
+        error: '未配置LLM API密钥，请在Vercel环境变量中配置DOUBAO_API_KEY、OPENAI_API_KEY或DEEPSEEK_API_KEY',
+      }, { status: 500 });
+    }
+
     const searchQueries = [
       'A股 大盘走势 最新',
       '上证指数 今日分析',
@@ -29,8 +37,12 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
 
     const allSearchResults: SearchResult[] = [];
     for (const query of searchQueries) {
-      const result = await searchWeb(query, 3);
-      allSearchResults.push(...result.results);
+      try {
+        const result = await searchWeb(query, 3);
+        allSearchResults.push(...result.results);
+      } catch (searchError) {
+        console.warn('搜索查询失败:', query, searchError);
+      }
     }
 
     const uniqueResults = Array.from(
@@ -75,6 +87,7 @@ ${context}
 请基于以上信息，对上证指数、创业板指、科创50三个指数进行今日走势预判。`;
 
     const result = await callLLMWithJSON<{ analyses: MarketAnalysis[] }>(userPrompt, {
+      provider: 'doubao',
       systemPrompt,
       temperature: 0.3,
       maxTokens: 1500,
@@ -89,34 +102,9 @@ ${context}
     });
   } catch (error) {
     console.error('金豆看盘API错误:', error);
-    
-    const mockAnalyses: MarketAnalysis[] = [
-      {
-        index: '上证指数',
-        prediction: 'bullish',
-        confidence: 72,
-        reasoning: '政策面支持叠加资金流入，预计今日震荡上行'
-      },
-      {
-        index: '创业板指',
-        prediction: 'neutral',
-        confidence: 65,
-        reasoning: '科技股分化，关注成交量变化'
-      },
-      {
-        index: '科创50',
-        prediction: 'bullish',
-        confidence: 78,
-        reasoning: 'AI概念持续火热，半导体板块领涨'
-      }
-    ];
-
     return NextResponse.json({
-      success: true,
-      data: {
-        analyses: mockAnalyses,
-        searchResults: [],
-      },
-    });
+      success: false,
+      error: `生成市场分析失败: ${error instanceof Error ? error.message : '未知错误'}，请稍后重试`,
+    }, { status: 500 });
   }
 }
