@@ -20,6 +20,14 @@ export async function callLLM(
     maxTokens: config?.maxTokens ?? 2000,
   };
 
+  console.log('LLM配置:', {
+    provider: fullConfig.provider,
+    model: fullConfig.model,
+    hasDOUBAO_API_KEY: !!process.env.DOUBAO_API_KEY,
+    hasOPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+    hasDEEPSEEK_API_KEY: !!process.env.DEEPSEEK_API_KEY,
+  });
+
   try {
     const client = createClient(fullConfig.provider);
     

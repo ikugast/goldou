@@ -130,6 +130,7 @@ ${context}
 请基于以上信息，为该股票生成一份标准化的分析研报。如果资讯中没有具体的财务数据，请使用合理的估算值。`;
 
     const report = await callLLMWithJSON<ReportData>(userPrompt, {
+      provider: 'doubao',
       systemPrompt,
       temperature: 0.4,
       maxTokens: 2000,
