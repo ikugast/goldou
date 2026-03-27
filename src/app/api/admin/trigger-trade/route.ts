@@ -1,100 +1,216 @@
 import { NextResponse } from 'next/server';
-import { initialStocks, initialModels, initialGameState } from '@/lib/data';
-import { updatePositions, recordNAV, validateOrder, executeOrder } from '@/lib/tradeEngine';
-import { generateAIDecision } from '@/lib/aiDecisionGateway';
+import { createClient } from '@supabase/supabase-js';
 
-const TRADING_SESSIONS = ['09:30', '10:30', '11:30', '13:00', '14:00', '14:30'];
-
-export async function POST(request: Request) {
+export async function POST() {
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json({ error: '环境变量未配置' }, { status: 500 });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+  
   try {
-    const { stocks, models, gameState } = await request.json();
+    const { data: gameState } = await supabase
+      .from('game_state')
+      .select('*')
+      .single();
 
-    if (!stocks || !models || !gameState) {
-      return NextResponse.json({
-        success: false,
-        error: '缺少必要参数',
-      }, { status: 400 });
+    if (!gameState) {
+      return NextResponse.json({ error: '游戏状态未初始化' }, { status: 400 });
     }
 
-    const simulateMarket = () => {
-      const newStocks = stocks.map((stock: any) => {
-        const volatility = 0.03;
-        const change = (Math.random() - 0.5) * 2 * volatility * stock.price;
-        const newPrice = Math.max(stock.price + change, 1);
-        const priceChange = newPrice - stock.price;
-        const percentChange = (priceChange / stock.price) * 100;
-        const newHigh = Math.max(stock.high, newPrice);
-        const newLow = Math.min(stock.low, newPrice);
-        const volumeChange = 0.8 + Math.random() * 0.4;
+    const { data: dbModels } = await supabase
+      .from('models')
+      .select('*')
+      .eq('is_active', true);
 
-        return {
-          ...stock,
-          price: parseFloat(newPrice.toFixed(2)),
-          change: parseFloat(priceChange.toFixed(2)),
-          changePercent: parseFloat(percentChange.toFixed(2)),
-          high: parseFloat(newHigh.toFixed(2)),
-          low: parseFloat(newLow.toFixed(2)),
-          volume: Math.floor(stock.volume * volumeChange),
-        };
-      });
+    if (!dbModels || dbModels.length === 0) {
+      return NextResponse.json({ error: '没有活跃的模型' }, { status: 400 });
+    }
 
-      let newModels = models.map((model: any) => updatePositions(model, newStocks));
+    const { fetchCNStockData, defaultSymbols } = await import('@/lib/marketData');
+    const stocks = await fetchCNStockData(defaultSymbols);
 
-      const currentSessionIndex = TRADING_SESSIONS.indexOf(gameState.currentSession);
-      const heldSince = new Map<string, Date>();
+    const { Model } = await import('@/types');
+    const models: any[] = await Promise.all(dbModels.map(async (dbModel: any) => {
+      const { data: positions } = await supabase
+        .from('positions')
+        .select('*')
+        .eq('model_id', dbModel.id);
 
-      newModels = newModels.map((model: any) => {
-        const decision = generateAIDecision(model, newStocks);
-        let updatedModel = { ...model, lastThought: decision.thought };
+      const { data: trades } = await supabase
+        .from('trades')
+        .select('*')
+        .eq('model_id', dbModel.id)
+        .order('timestamp', { ascending: false });
 
-        for (const order of decision.orders) {
-          const validation = validateOrder(order, updatedModel, newStocks, heldSince);
-          if (validation.valid) {
-            const result = executeOrder(order, updatedModel, newStocks, heldSince);
-            updatedModel = result.model;
-          }
-        }
+      const { data: navHistory } = await supabase
+        .from('nav_history')
+        .select('*')
+        .eq('model_id', dbModel.id)
+        .order('date', { ascending: true });
 
-        return updatedModel;
-      });
-
-      let newDay = gameState.currentDay;
-      let newSession = gameState.currentSession;
-      const nextSessionIndex = currentSessionIndex + 1;
-
-      if (nextSessionIndex >= TRADING_SESSIONS.length) {
-        newDay += 1;
-        newSession = TRADING_SESSIONS[0];
-        newModels = newModels.map((model: any) => recordNAV(model, newDay));
-      } else {
-        newSession = TRADING_SESSIONS[nextSessionIndex];
-      }
-
-      const newGameState = {
-        ...gameState,
-        currentDay: newDay,
-        currentSession: newSession,
-        lastUpdate: new Date(),
-      };
+      const modelPositions = (positions || []).map((p: any) => ({
+        symbol: p.symbol,
+        name: p.name,
+        shares: p.shares,
+        avgPrice: p.avg_price,
+        currentPrice: p.current_price,
+        costBasis: p.avg_price * p.shares,
+        marketValue: p.current_price * p.shares,
+        unrealizedPnL: (p.current_price - p.avg_price) * p.shares,
+        unrealizedPnLPercent: ((p.current_price - p.avg_price) / p.avg_price) * 100
+      }));
 
       return {
-        stocks: newStocks,
-        models: newModels,
-        gameState: newGameState,
+        id: dbModel.id,
+        name: dbModel.name,
+        description: dbModel.description,
+        avatar: dbModel.avatar,
+        strategyType: dbModel.strategy_type,
+        initialCash: dbModel.initial_cash,
+        cash: dbModel.cash,
+        positions: modelPositions,
+        trades: trades || [],
+        totalValue: dbModel.total_value,
+        returnPercent: dbModel.return_percent,
+        navHistory: navHistory || [],
+        winRate: dbModel.win_rate || 0,
+        totalTrades: dbModel.total_trades || 0,
+        lastThought: dbModel.last_thought || '',
+        isActive: dbModel.is_active
       };
-    };
+    }));
 
-    const result = simulateMarket();
+    const { data: heldSinceData } = await supabase
+      .from('held_since')
+      .select('*');
 
-    return NextResponse.json({
-      success: true,
-      data: result,
+    const heldSince = new Map<string, Date>();
+    (heldSinceData || []).forEach((h: any) => {
+      heldSince.set(h.symbol, new Date(h.date));
+    });
+
+    const { updatePositions, recordNAV, validateOrder, executeOrder } = await import('@/lib/tradeEngine');
+    const { generateRealAIDecision } = await import('@/lib/aiDecisionGatewayReal');
+
+    const updatedModels: any[] = [];
+
+    for (const model of models) {
+      let updatedModel = updatePositions(model, stocks);
+      const decision = await generateRealAIDecision(updatedModel, stocks);
+      updatedModel = { ...updatedModel, lastThought: decision.thought };
+
+      for (const order of decision.orders) {
+        const validation = validateOrder(order, updatedModel, stocks, heldSince);
+        if (validation.valid) {
+          const result = executeOrder(order, updatedModel, stocks, heldSince);
+          updatedModel = result.model;
+          
+          await supabase.from('trades').insert({
+            id: result.trade.id,
+            model_id: updatedModel.id,
+            symbol: result.trade.symbol,
+            name: result.trade.name,
+            type: result.trade.type,
+            shares: result.trade.shares,
+            price: result.trade.price,
+            amount: result.trade.amount,
+            pnl: result.trade.pnl,
+            pnl_percent: result.trade.pnlPercent,
+            timestamp: result.trade.timestamp
+          });
+        }
+      }
+
+      updatedModels.push(updatedModel);
+    }
+
+    const TRADING_SESSIONS = ['09:30', '10:30', '11:30', '13:00', '14:00', '14:30'];
+    const currentSessionIndex = TRADING_SESSIONS.indexOf(gameState.current_session);
+    let newDay = gameState.current_day;
+    let newSession = gameState.current_session;
+    const nextSessionIndex = currentSessionIndex + 1;
+
+    if (nextSessionIndex >= 6) {
+      newDay += 1;
+      newSession = '09:30';
+      
+      for (const model of updatedModels) {
+        const updatedModel = recordNAV(model, newDay);
+        await supabase.from('nav_history').insert({
+          model_id: model.id,
+          date: `Day ${newDay}`,
+          nav: updatedModel.navHistory[updatedModel.navHistory.length - 1].nav,
+          return_percent: updatedModel.navHistory[updatedModel.navHistory.length - 1].returnPercent
+        });
+      }
+    } else {
+      newSession = TRADING_SESSIONS[nextSessionIndex];
+    }
+
+    for (const model of updatedModels) {
+      await supabase
+        .from('models')
+        .update({
+          cash: model.cash,
+          total_value: model.totalValue,
+          return_percent: model.returnPercent,
+          win_rate: model.winRate,
+          total_trades: model.totalTrades,
+          last_thought: model.lastThought,
+          updated_at: new Date()
+        })
+        .eq('id', model.id);
+
+      await supabase.from('positions').delete().eq('model_id', model.id);
+      
+      for (const position of model.positions) {
+        await supabase.from('positions').insert({
+          model_id: model.id,
+          symbol: position.symbol,
+          name: position.name,
+          shares: position.shares,
+          avg_price: position.avgPrice,
+          current_price: position.currentPrice
+        });
+      }
+    }
+
+    const heldSinceArray = Array.from(heldSince.entries()).map(([symbol, date]) => ({
+      symbol,
+      date: date.toISOString()
+    }));
+    
+    await supabase.from('held_since').delete().neq('id', 0);
+    if (heldSinceArray.length > 0) {
+      await supabase.from('held_since').insert(heldSinceArray);
+    }
+
+    await supabase
+      .from('game_state')
+      .update({
+        current_day: newDay,
+        current_session: newSession,
+        last_update: new Date()
+      })
+      .eq('id', gameState.id);
+
+    return NextResponse.json({ 
+      success: true, 
+      models: updatedModels, 
+      stocks,
+      gameState: { ...gameState, current_day: newDay, current_session: newSession }
     });
   } catch (error) {
     console.error('触发交易失败:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : '未知错误',
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: '交易执行失败', details: error instanceof Error ? error.message : '未知错误' },
+      { status: 500 }
+    );
   }
 }

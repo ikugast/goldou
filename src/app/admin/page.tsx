@@ -178,19 +178,13 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/admin/trigger-trade', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stocks, models, gameState }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setStocks(data.data.stocks);
-        setModels(data.data.models);
-        setGameState(data.data.gameState);
         showMessage('AI决策交易执行成功！', 'success');
+        await fetchStockPool();
       } else {
         showMessage(data.error || '交易执行失败', 'error');
       }

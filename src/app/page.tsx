@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModelCard from '@/components/ModelCard';
 import PerformanceChart from '@/components/PerformanceChart';
 import JindouMarket from '@/components/JindouMarket';
@@ -8,11 +8,35 @@ import JindouReport from '@/components/JindouReport';
 import JindouNews from '@/components/JindouNews';
 import { initialModels } from '@/lib/data';
 import { Model } from '@/types';
-import { Trophy, BarChart3, FileText, Newspaper } from 'lucide-react';
+import { Trophy, BarChart3, FileText, Newspaper, RefreshCw } from 'lucide-react';
 
 export default function Home() {
-  const [models] = useState<Model[]>(initialModels);
+  const [models, setModels] = useState<Model[]>(initialModels);
   const [activeNav, setActiveNav] = useState('ranking');
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchModels = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/models');
+      const data = await response.json();
+      if (data.success && data.data.models) {
+        setModels(data.data.models);
+        setLastUpdated(new Date());
+      }
+    } catch (error) {
+      console.error('获取模型数据失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchModels();
+    const interval = setInterval(fetchModels, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const sortedModels = [...models].sort((a, b) => b.returnPercent - a.returnPercent);
 
@@ -27,6 +51,21 @@ export default function Home() {
                 <h1 className="text-2xl font-bold text-white">金豆芽实验室</h1>
                 <p className="text-sm text-slate-400">AI Trading Arena</p>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {lastUpdated && (
+                <span className="text-sm text-slate-400">
+                  更新于 {lastUpdated.toLocaleTimeString('zh-CN')}
+                </span>
+              )}
+              <button
+                onClick={fetchModels}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                刷新
+              </button>
             </div>
             
             <nav className="flex gap-2">
