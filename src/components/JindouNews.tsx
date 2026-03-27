@@ -58,14 +58,14 @@ export default function JindouNews() {
   };
 
   const getTypeIcon = (sentiment: string) => {
-    if (sentiment === 'positive') return <TrendingUp size={16} className="text-emerald-400" />;
-    if (sentiment === 'negative') return <TrendingDown size={16} className="text-red-400" />;
+    if (sentiment === 'positive') return <TrendingUp size={16} className="text-red-400" />;
+    if (sentiment === 'negative') return <TrendingDown size={16} className="text-emerald-400" />;
     return <Clock size={16} className="text-slate-400" />;
   };
 
   const getTypeColor = (sentiment: string) => {
-    if (sentiment === 'positive') return 'border-l-emerald-500';
-    if (sentiment === 'negative') return 'border-l-red-500';
+    if (sentiment === 'positive') return 'border-l-red-500';
+    if (sentiment === 'negative') return 'border-l-emerald-500';
     return 'border-l-slate-500';
   };
 
@@ -79,8 +79,8 @@ export default function JindouNews() {
     <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-500/20 p-2 rounded-lg">
-            <Newspaper className="text-emerald-400" size={24} />
+          <div className="bg-blue-500/20 p-2 rounded-lg">
+            <Newspaper className="text-blue-400" size={24} />
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">金豆财讯</h3>
@@ -90,7 +90,7 @@ export default function JindouNews() {
         <button
           onClick={fetchNews}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
         >
           <Zap size={18} className={isLoading ? 'animate-pulse' : ''} />
           {isLoading ? '刷新中...' : '刷新'}
@@ -100,20 +100,14 @@ export default function JindouNews() {
       {error && (
         <div className="text-center py-12">
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-6">
-            <p className="text-red-400 mb-4">{error}</p>
-            <button
-              onClick={fetchNews}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors"
-            >
-              重新尝试
-            </button>
+            <p className="text-red-400">{error}</p>
           </div>
         </div>
       )}
 
       {isLoading && news.length === 0 && !error && (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-slate-400">正在联网搜索最新财经资讯...</p>
         </div>
       )}
@@ -133,8 +127,8 @@ export default function JindouNews() {
                   {getTypeIcon(item.sentiment)}
                   <h4 className="font-medium text-white">{item.title}</h4>
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    item.sentiment === 'positive' ? 'bg-emerald-500/20 text-emerald-400' :
-                    item.sentiment === 'negative' ? 'bg-red-500/20 text-red-400' :
+                    item.sentiment === 'positive' ? 'bg-red-500/20 text-red-400' :
+                    item.sentiment === 'negative' ? 'bg-emerald-500/20 text-emerald-400' :
                     'bg-slate-500/20 text-slate-400'
                   }`}>
                     {getSentimentText(item.sentiment)}

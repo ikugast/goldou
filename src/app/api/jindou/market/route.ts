@@ -21,7 +21,6 @@ interface MarketResponse {
 const cleanText = (text: string): string => {
   if (!text) return '';
   return text
-    .replace(/[^\x00-\xFF]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 };
@@ -37,10 +36,10 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
     }
 
     const searchQueries = [
-      'A股 market trend',
-      'Shanghai Composite Index analysis',
-      'ChiNext Index forecast',
-      'STAR 50 Index analysis'
+      'A股 大盘走势',
+      '上证指数 分析',
+      '创业板指 预测',
+      '科创50 分析'
     ];
 
     const allSearchResults: SearchResult[] = [];
@@ -58,41 +57,41 @@ export async function POST(): Promise<NextResponse<MarketResponse>> {
     );
     
     const context = uniqueResults.map(r => 
-      `Title: ${cleanText(r.title)}\nContent: ${cleanText(r.content)}\nURL: ${r.url}`
+      `标题: ${cleanText(r.title)}\n内容: ${cleanText(r.content)}\nURL: ${r.url}`
     ).join('\n\n');
 
-    const systemPrompt = cleanText(`You are a professional A-share market analyst. Based on the latest financial news provided, please make today's market trend predictions for the Shanghai Composite Index, ChiNext Index, and STAR 50 Index.
+    const systemPrompt = cleanText(`你是一名专业的A股市场分析师。根据提供的最新财经资讯，请对上证指数、创业板指和科创50指数做出今日走势预测。
 
-Please output the following JSON format:
+请输出以下JSON格式：
 {
   "analyses": [
     {
-      "index": "Shanghai Composite Index",
+      "index": "上证指数",
       "prediction": "bullish|bearish|neutral",
-      "confidence": number between 0-100,
-      "reasoning": "detailed analysis"
+      "confidence": 0-100之间的数字,
+      "reasoning": "详细分析"
     },
     {
-      "index": "ChiNext Index",
+      "index": "创业板指",
       "prediction": "bullish|bearish|neutral",
-      "confidence": number between 0-100,
-      "reasoning": "detailed analysis"
+      "confidence": 0-100之间的数字,
+      "reasoning": "详细分析"
     },
     {
-      "index": "STAR 50 Index",
+      "index": "科创50",
       "prediction": "bullish|bearish|neutral",
-      "confidence": number between 0-100,
-      "reasoning": "detailed analysis"
+      "confidence": 0-100之间的数字,
+      "reasoning": "详细分析"
     }
   ]
 }`);
 
-    const userPrompt = cleanText(`Current time: ${new Date().toISOString().split('T')[0]}
+    const userPrompt = cleanText(`当前时间: ${new Date().toISOString().split('T')[0]}
 
-Here is the latest market news:
+以下是最新市场资讯：
 ${context}
 
-Based on the above information, please make today's market trend predictions for the Shanghai Composite Index, ChiNext Index, and STAR 50 Index.`);
+根据以上信息，请对上证指数、创业板指和科创50指数做出今日走势预测。`);
 
     const result = await callLLMWithJSON<{ analyses: MarketAnalysis[] }>(userPrompt, {
       provider: 'doubao',

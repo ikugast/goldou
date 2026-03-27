@@ -11,7 +11,6 @@ export interface LLMConfig {
 function cleanText(text: string): string {
   if (!text) return '';
   return text
-    .replace(/[^\x00-\xFF]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

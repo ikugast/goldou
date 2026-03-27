@@ -67,8 +67,8 @@ export default function JindouReport() {
   };
 
   const getRatingColor = (rating: string) => {
-    if (rating === 'buy') return 'text-emerald-400 bg-emerald-500/20';
-    if (rating === 'sell') return 'text-red-400 bg-red-500/20';
+    if (rating === 'buy') return 'text-red-400 bg-red-500/20';
+    if (rating === 'sell') return 'text-emerald-400 bg-emerald-500/20';
     return 'text-slate-400 bg-slate-500/20';
   };
 
@@ -144,9 +144,9 @@ export default function JindouReport() {
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-white">{formatCurrency(report.targetPrice)}</span>
                 {report.upside > 0 ? (
-                  <span className="text-emerald-400 font-medium">+{formatPercent(report.upside)}</span>
+                  <span className="text-red-400 font-medium">+{formatPercent(report.upside)}</span>
                 ) : report.upside < 0 ? (
-                  <span className="text-red-400 font-medium">{formatPercent(report.upside)}</span>
+                  <span className="text-emerald-400 font-medium">{formatPercent(report.upside)}</span>
                 ) : null}
               </div>
             </div>
@@ -162,28 +162,28 @@ export default function JindouReport() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
                 <TrendingUp size={16} />
                 看多逻辑
               </h5>
               <ul className="space-y-2">
                 {report.pros.map((pro, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <span className="text-emerald-400 mt-1">•</span>
+                    <span className="text-red-400 mt-1">•</span>
                     {pro}
                   </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
+              <h5 className="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
                 <TrendingDown size={16} />
                 风险提示
               </h5>
               <ul className="space-y-2">
                 {report.cons.map((con, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <span className="text-red-400 mt-1">•</span>
+                    <span className="text-emerald-400 mt-1">•</span>
                     {con}
                   </li>
                 ))}
@@ -202,7 +202,7 @@ export default function JindouReport() {
                   <div className="text-slate-500 text-sm mb-1">营业总收入</div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-white">{report.financials.revenue}亿</span>
-                    <span className={report.financials.revenueGrowth >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    <span className={report.financials.revenueGrowth >= 0 ? 'text-red-400' : 'text-emerald-400'}>
                       {formatPercent(report.financials.revenueGrowth)}
                     </span>
                   </div>
@@ -211,7 +211,7 @@ export default function JindouReport() {
                   <div className="text-slate-500 text-sm mb-1">净利润</div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-white">{report.financials.netProfit}亿</span>
-                    <span className={report.financials.profitGrowth >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    <span className={report.financials.profitGrowth >= 0 ? 'text-red-400' : 'text-emerald-400'}>
                       {formatPercent(report.financials.profitGrowth)}
                     </span>
                   </div>

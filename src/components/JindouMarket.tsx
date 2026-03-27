@@ -46,8 +46,8 @@ export default function JindouMarket() {
   }, [hasLoaded]);
 
   const getPredictionIcon = (prediction: string) => {
-    if (prediction === 'bullish') return <TrendingUp size={20} className="text-emerald-400" />;
-    if (prediction === 'bearish') return <TrendingDown size={20} className="text-red-400" />;
+    if (prediction === 'bullish') return <TrendingUp size={20} className="text-red-400" />;
+    if (prediction === 'bearish') return <TrendingDown size={20} className="text-emerald-400" />;
     return <BarChart3 size={20} className="text-slate-400" />;
   };
 
@@ -58,8 +58,8 @@ export default function JindouMarket() {
   };
 
   const getPredictionColor = (prediction: string) => {
-    if (prediction === 'bullish') return 'text-emerald-400';
-    if (prediction === 'bearish') return 'text-red-400';
+    if (prediction === 'bullish') return 'text-red-400';
+    if (prediction === 'bearish') return 'text-emerald-400';
     return 'text-slate-400';
   };
 
@@ -132,8 +132,8 @@ export default function JindouMarket() {
                   <div className="w-full bg-slate-700 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all ${
-                        analysis.prediction === 'bullish' ? 'bg-emerald-500' : 
-                        analysis.prediction === 'bearish' ? 'bg-red-500' : 'bg-slate-500'
+                        analysis.prediction === 'bullish' ? 'bg-red-500' : 
+                        analysis.prediction === 'bearish' ? 'bg-emerald-500' : 'bg-slate-500'
                       }`}
                       style={{ width: `${analysis.confidence}%` }}
                     />
