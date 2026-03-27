@@ -1,22 +1,35 @@
-# === 绝对禁止提交的安全文件 ===
-.env
-*.env
-!.env.example
+# Dependencies
+node_modules
+.pnp
+.pnp.js
 
-# 仿真状态文件（包含决策历史，运行时自动生成）
-engine_state.json
-simulation_output.json
-scheduler.log
+# Testing
+coverage
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
+# Next.js
+.next/
+out/
+build
 
-# 前端构建产物
-frontend/node_modules/
-frontend/dist/
-
-# 系统文件
+# Misc
 .DS_Store
-Thumbs.db
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# IDE
+.vscode
+.idea
