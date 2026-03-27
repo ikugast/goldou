@@ -322,10 +322,24 @@ function getMockReport(query: string): ReportData {
 function generateGenericStockReport(name: string, symbol: string): ReportData {
   const randomRating: 'buy' | 'hold' | 'sell' = Math.random() > 0.3 ? 'buy' : (Math.random() > 0.5 ? 'hold' : 'sell');
   const currentPrice = Math.floor(Math.random() * 200) + 20;
-  const upside = randomRating === 'buy' ? Math.floor(Math.random() * 30) + 5 : 
-                  randomRating === 'sell' ? -Math.floor(Math.random() * 20) - 5 : 
-                  Math.floor(Math.random() * 10) - 5;
-  const targetPrice = currentPrice * (1 + upside / 100);
+  let upside: number;
+  let targetPrice: number;
+  
+  if (randomRating === 'buy') {
+    upside = Math.floor(Math.random() * 30) + 5;
+    targetPrice = currentPrice * (1 + upside / 100);
+  } else if (randomRating === 'sell') {
+    upside = -Math.floor(Math.random() * 20) - 5;
+    targetPrice = currentPrice * (1 + upside / 100);
+  } else {
+    upside = Math.floor(Math.random() * 10) - 5;
+    targetPrice = currentPrice;
+  }
+
+  const revenue = Math.floor(Math.random() * 500) + 50;
+  const revenueGrowth = Math.round((Math.random() * 30) * 100) / 100;
+  const netProfit = Math.floor(revenue * (Math.random() * 0.3 + 0.05));
+  const profitGrowth = Math.round((Math.random() * 40) * 100) / 100;
 
   return {
     symbol: symbol,
@@ -346,10 +360,10 @@ function generateGenericStockReport(name: string, symbol: string): ReportData {
       '市场波动可能影响股价表现'
     ],
     financials: {
-      revenue: Math.floor(Math.random() * 500) + 50,
-      revenueGrowth: Math.round((Math.random() * 30 - 5) * 100) / 100,
-      netProfit: Math.floor(Math.random() * 50) + 5,
-      profitGrowth: Math.round((Math.random() * 40 - 10) * 100) / 100,
+      revenue: revenue,
+      revenueGrowth: revenueGrowth,
+      netProfit: netProfit,
+      profitGrowth: profitGrowth,
       pe: Math.floor(Math.random() * 50) + 15,
       pb: Math.floor(Math.random() * 10) + 2
     },
@@ -360,10 +374,24 @@ function generateGenericStockReport(name: string, symbol: string): ReportData {
 function generateStockReport(stock: { symbol: string; name: string }): ReportData {
   const randomRating: 'buy' | 'hold' | 'sell' = Math.random() > 0.3 ? 'buy' : (Math.random() > 0.5 ? 'hold' : 'sell');
   const currentPrice = Math.floor(Math.random() * 200) + 20;
-  const upside = randomRating === 'buy' ? Math.floor(Math.random() * 30) + 5 : 
-                  randomRating === 'sell' ? -Math.floor(Math.random() * 20) - 5 : 
-                  Math.floor(Math.random() * 10) - 5;
-  const targetPrice = currentPrice * (1 + upside / 100);
+  let upside: number;
+  let targetPrice: number;
+  
+  if (randomRating === 'buy') {
+    upside = Math.floor(Math.random() * 30) + 5;
+    targetPrice = currentPrice * (1 + upside / 100);
+  } else if (randomRating === 'sell') {
+    upside = -Math.floor(Math.random() * 20) - 5;
+    targetPrice = currentPrice * (1 + upside / 100);
+  } else {
+    upside = Math.floor(Math.random() * 10) - 5;
+    targetPrice = currentPrice;
+  }
+
+  const revenue = Math.floor(Math.random() * 500) + 50;
+  const revenueGrowth = Math.round((Math.random() * 30) * 100) / 100;
+  const netProfit = Math.floor(revenue * (Math.random() * 0.3 + 0.05));
+  const profitGrowth = Math.round((Math.random() * 40) * 100) / 100;
 
   return {
     symbol: stock.symbol,
@@ -384,10 +412,10 @@ function generateStockReport(stock: { symbol: string; name: string }): ReportDat
       '原材料价格波动风险'
     ],
     financials: {
-      revenue: Math.floor(Math.random() * 500) + 50,
-      revenueGrowth: Math.round((Math.random() * 30 - 5) * 100) / 100,
-      netProfit: Math.floor(Math.random() * 50) + 5,
-      profitGrowth: Math.round((Math.random() * 40 - 10) * 100) / 100,
+      revenue: revenue,
+      revenueGrowth: revenueGrowth,
+      netProfit: netProfit,
+      profitGrowth: profitGrowth,
       pe: Math.floor(Math.random() * 50) + 15,
       pb: Math.floor(Math.random() * 10) + 2
     },
