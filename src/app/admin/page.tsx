@@ -11,7 +11,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [stocks, setStocks] = useState<Stock[]>(initialStocks);
-  const [models, setModels] = useState<Model[]>(initialModels);
+  const [models, setModels] = useState<Model[]>([]);
   const [gameState, setGameState] = useState<GameState>({
     ...initialGameState,
     startDate: new Date().toISOString().split('T')[0],
@@ -25,6 +25,7 @@ export default function AdminPage() {
   const [newStockPrice, setNewStockPrice] = useState('');
   const [stockSearch, setStockSearch] = useState('');
   const [isStockPoolLoading, setIsStockPoolLoading] = useState(false);
+  const [isModelsLoading, setIsModelsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,6 +65,21 @@ export default function AdminPage() {
       console.error('获取股票池失败:', error);
     } finally {
       setIsStockPoolLoading(false);
+    }
+  };
+
+  const fetchModels = async () => {
+    setIsModelsLoading(true);
+    try {
+      const response = await fetch('/api/models');
+      const data = await response.json();
+      if (data.success && data.data) {
+        setModels(data.data.models);
+      }
+    } catch (error) {
+      console.error('获取模型数据失败:', error);
+    } finally {
+      setIsModelsLoading(false);
     }
   };
 
@@ -166,6 +182,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchStockPool();
+    fetchModels();
   }, []);
 
   const filteredStocks = stocks.filter(stock =>
@@ -185,6 +202,7 @@ export default function AdminPage() {
       if (data.success) {
         showMessage('AI决策交易执行成功！', 'success');
         await fetchStockPool();
+        await fetchModels();
       } else {
         showMessage(data.error || '交易执行失败', 'error');
       }
