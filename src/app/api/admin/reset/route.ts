@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server';
-import { initialStocks, initialModels, initialGameState } from '@/lib/data';
+import { resetState, getState } from '@/lib/memoryState';
 
 export async function POST() {
   try {
-    const resetData = {
-      stocks: initialStocks,
-      models: initialModels,
-      gameState: {
-        ...initialGameState,
-        startDate: new Date().toISOString().split('T')[0],
-      },
-    };
-
+    resetState();
+    const state = getState();
+    
     return NextResponse.json({
       success: true,
-      data: resetData,
+      data: {
+        stocks: state.stocks,
+        models: state.models,
+        gameState: state.gameState,
+      },
     });
   } catch (error) {
     console.error('重置失败:', error);
