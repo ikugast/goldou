@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchWeb, SearchResult } from '@/lib/search';
 import { callLLMWithJSON } from '@/lib/llm';
+import { getIndexQuote, IndexQuote } from '@/lib/eastmoney';
 
 interface MarketAnalysis {
   index: string;
@@ -14,6 +15,7 @@ interface MarketResponse {
   data?: {
     analyses: MarketAnalysis[];
     searchResults: SearchResult[];
+    indexQuotes: IndexQuote[];
   };
   error?: string;
 }
@@ -100,11 +102,25 @@ ${context}
       maxTokens: 1500,
     });
 
+    const indexQuotes: IndexQuote[] = [];
+    const indexSymbols = ['上证指数', '创业板指', '科创50'];
+    
+    for (const symbol of indexSymbols) {
+      try {
+        const quote = await getIndexQuote(symbol);
+        indexQuotes.push(quote);
+        console.log(`获取${symbol}行情成功:`, quote);
+      } catch (error) {
+        console.warn(`获取${symbol}行情失败:`, error);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         analyses: result.analyses,
         searchResults: uniqueResults,
+        indexQuotes,
       },
     });
   } catch (error) {

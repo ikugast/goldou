@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchWeb, SearchResult } from '@/lib/search';
 import { callLLMWithJSON } from '@/lib/llm';
-import { getStockQuote, getStockFinancials } from '@/lib/qveris';
+import { getStockQuote, getStockFinancials } from '@/lib/eastmoney';
 
 interface ReportData {
   symbol: string;

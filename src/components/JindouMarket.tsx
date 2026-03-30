@@ -11,9 +11,19 @@ interface MarketAnalysis {
   reasoning: string;
 }
 
+interface IndexQuote {
+  name: string;
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  timestamp: string;
+}
+
 export default function JindouMarket() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [analyses, setAnalyses] = useState<MarketAnalysis[]>([]);
+  const [indexQuotes, setIndexQuotes] = useState<IndexQuote[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +37,9 @@ export default function JindouMarket() {
       const data = await response.json();
       if (data.success && data.data) {
         setAnalyses(data.data.analyses);
+        if (data.data.indexQuotes) {
+          setIndexQuotes(data.data.indexQuotes);
+        }
       } else if (data.error) {
         setError(data.error);
       }
@@ -61,6 +74,18 @@ export default function JindouMarket() {
     if (prediction === 'bullish') return 'text-red-400';
     if (prediction === 'bearish') return 'text-emerald-400';
     return 'text-slate-400';
+  };
+
+  const getChangeColor = (change: number) => {
+    if (change > 0) return 'text-red-400';
+    if (change < 0) return 'text-emerald-400';
+    return 'text-slate-400';
+  };
+
+  const getChangeIcon = (change: number) => {
+    if (change > 0) return <TrendingUp size={16} />;
+    if (change < 0) return <TrendingDown size={16} />;
+    return <BarChart3 size={16} />;
   };
 
   return (
@@ -108,8 +133,38 @@ export default function JindouMarket() {
 
       {analyses.length > 0 && (
         <div>
+          {indexQuotes.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <BarChart3 size={18} className="text-slate-400" />
+                实时指数行情
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {indexQuotes.map((quote, index) => (
+                  <div key={index} className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="font-semibold text-white">{quote.name}</h5>
+                      <div className={`flex items-center gap-1 ${getChangeColor(quote.change)}`}>
+                        {getChangeIcon(quote.change)}
+                        <span className="font-bold">
+                          {quote.change > 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-white">
+                      {quote.price.toFixed(2)}
+                    </div>
+                    <div className={`text-sm ${getChangeColor(quote.change)}`}>
+                      {quote.change > 0 ? '+' : ''}{quote.change.toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-slate-400" />
+            <Brain size={18} className="text-slate-400" />
             大盘走势预判
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
